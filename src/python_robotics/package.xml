@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="2">
+  <name>python_robotics</name>
+  <version>1.0.0</version>
+  <description>
+    The Python Robotics package.
+    It exposes several functionalities through a submodule.
+  </description>
+  <maintainer email="imvarela17@esei.uvigo.es">Iago Muñoz Varela</maintainer>
+  <license>BSD-2.0</license>
+  
+  <depend>rclcpp</depend>
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>driverless_msgs</depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
