@@ -1,3 +1,4 @@
+from math import radians
 
 class VehicleParams:
     LENGTH = 4.5  # [m]
@@ -10,6 +11,11 @@ class VehicleParams:
 
 class AlgorithmParams:
     DETECTION_DISTANCE = 20.0 # [m]
+    MAX_STEER = radians(45.0)  # maximum steering angle [rad]
+    MAX_DSTEER = radians(30.0)  # maximum steering speed [rad/s]
+    MAX_SPEED = 55.0 / 3.6  # maximum speed [m/s]
+    MIN_SPEED = -20.0 / 3.6  # minimum speed [m/s]
+    MAX_ACCEL = 1.0  # maximum accel [m/ss]
 
 class NodeParameters:
     SPIN_PERIOD = 0.05

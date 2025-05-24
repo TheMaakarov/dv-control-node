@@ -15,9 +15,12 @@ class NodeAdapter(Node):
     def get_logger(self, log_level = LogLevel.Info) -> RosLogger:
         return self._logger.get_child(log_level.name.lower())
     
-    def log(self, message, log_level = LogLevel.Info) -> None:
+    def log(self, message = None, log_level = LogLevel.Info) -> None:
         logger = self.get_logger(log_level)
         log_action = _map_log_level_to_action(logger, log_level)
+        if message is None:
+            log_action("")
+            return
         log_action(message)
 
 
