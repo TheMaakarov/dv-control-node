@@ -39,7 +39,7 @@ class FakePathPlanning(PathProvider):
         if not self._has_data():
             return None
         
-        return self._get_point_at_index(self, 0)
+        return self._get_point_at_index(0)
 
     def get_next_spline_point(self, car_state: State) -> SplinePoint:
         if not self._has_data() or self._current_index >= self._path_length:

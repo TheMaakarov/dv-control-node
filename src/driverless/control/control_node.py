@@ -1,24 +1,22 @@
 import numpy as np
 
 import rclpy
-import rclpy.logging
-from rclpy.node import Node
-from rclpy.impl.logging_severity import LoggingSeverity
 
 #from tuw_spline_msgs.msg import Spline
 from driverless_msgs.msg import Actuation
 
+from .node_wrapper import NodeAdapter as Node
 from .path_tracking.model_predictive_speed_and_steer_control import Manager
 from .path_planning.providers import FakePathPlanning
 from .domain.enums import Route, LogLevel
-from .domain.parameters import NodeParameters
+from .domain.parameters import NodeParameters, TopicNames
 
 class ControlNode(Node):
 
     def __init__(self, mpc_manager: Manager):
-        super().__init__('control_node_publisher')
+        super().__init__(TopicNames.PUBLISHER_CONTROL)
         self.log("Initialized.")
-        self._publisher = self.create_publisher(Actuation, 'topic', 10)
+        self._publisher = self.create_publisher(Actuation, TopicNames.SUBSCRIBER_ACTUATION, 10)
         self.log("Publisher created.")
         timer_period = NodeParameters.SPIN_PERIOD
         self._mpc = mpc_manager
@@ -44,32 +42,10 @@ class ControlNode(Node):
         
         self.log(f'Publishing message: {actuation_msg}')
         self._publish(actuation_msg)
-
-    def log(self, message, log_level = LogLevel.Info):
-        # log_severity = map_log_level(log_level)
-        log = self.get_logger()
-        log.log(message, LoggingSeverity.WARN)
     
     def _publish(self, msg: Actuation):
         self._publisher.publish(msg)
         self.log(f'Published: "{msg}"')
-
-def map_log_level(log_level: LogLevel) -> LoggingSeverity:
-    match log_level:
-        case LogLevel.Trace:
-            return LoggingSeverity.UNSET
-        case LogLevel.Debug:
-            return LoggingSeverity.WARN
-        case LogLevel.Info:
-            return LoggingSeverity.INFO
-        case LogLevel.Warn:
-            return LoggingSeverity.WARN
-        case LogLevel.Error:
-            return LoggingSeverity.ERROR
-        case LogLevel.Fatal:
-            return LoggingSeverity.FATAL
-        case _:
-            return LoggingSeverity.UNSET
 
 
 def map_steer(angle, leftMin, leftMax, rightMin, rightMax):
@@ -90,10 +66,15 @@ def main(args=None):
     mpc_manager = Manager(path_provider)
     pub = ControlNode(mpc_manager)
 
-    rclpy.spin(pub)
-
-    pub.destroy_node()
-    rclpy.shutdown()
+    try:
+        rclpy.spin(pub)
+    except KeyboardInterrupt:
+        pub.log('Keyboard interrupt, shutting down.', LogLevel.Warn)
+    except Exception as e:
+        pub.log(f'Exception occurred: {e}', LogLevel.Error)
+    finally:
+        pub.destroy_node()
+        rclpy.shutdown()
 
 if __name__ == '__main__':
     main()

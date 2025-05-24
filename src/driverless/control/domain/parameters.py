@@ -13,3 +13,7 @@ class AlgorithmParams:
 
 class NodeParameters:
     SPIN_PERIOD = 0.05
+
+class TopicNames:
+    SUBSCRIBER_ACTUATION = 'actuation_node_subscriber'
+    PUBLISHER_CONTROL = 'control_node_publisher'
