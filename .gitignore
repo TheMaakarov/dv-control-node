@@ -52,3 +52,7 @@ qtcreator-*
 # Catkin custom files
 CATKIN_IGNORE
 .vscode/
+
+# Caches
+**.pytest_cache/
+**/__pycache__/

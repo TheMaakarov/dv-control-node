@@ -1,24 +1,22 @@
 import numpy as np
+from typing import Callable
 
 import rclpy
-import rclpy.logging
-from rclpy.node import Node
-from rclpy.impl.logging_severity import LoggingSeverity
 
-#from tuw_spline_msgs.msg import Spline
 from driverless_msgs.msg import Actuation
 
+from .node_wrapper import NodeAdapter as Node
 from .path_tracking.model_predictive_speed_and_steer_control import Manager
 from .path_planning.providers import FakePathPlanning
 from .domain.enums import Route, LogLevel
-from .domain.parameters import NodeParameters
+from .domain.parameters import NodeParameters, TopicNames, AlgorithmParams
 
 class ControlNode(Node):
 
     def __init__(self, mpc_manager: Manager):
-        super().__init__('control_node_publisher')
+        super().__init__(TopicNames.PUBLISHER_CONTROL)
         self.log("Initialized.")
-        self._publisher = self.create_publisher(Actuation, 'topic', 10)
+        self._publisher = self.create_publisher(Actuation, TopicNames.SUBSCRIBER_ACTUATION, 10)
         self.log("Publisher created.")
         timer_period = NodeParameters.SPIN_PERIOD
         self._mpc = mpc_manager
@@ -27,7 +25,8 @@ class ControlNode(Node):
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
     def timer_callback(self):
-        self.log('Timer callback called')
+        self.log()
+        self.log('Timer callback called', LogLevel.Debug)
         next_action = self._mpc.next_action()
         self.log(f'Received actuation action: {next_action}')
         if next_action is None:
@@ -37,51 +36,48 @@ class ControlNode(Node):
         actuation_msg = Actuation()
         actuation_msg.accel = next_action[0]
 
-        actuation_msg.steer = map_steer(
+        actuation_msg.steer = map_to_range(
             next_action[1],
-            -np.pi/4, np.pi/4,
-            -1.0, 1.0)
+            AlgorithmParams.MAX_STEER,
+            1.0)
         
         self.log(f'Publishing message: {actuation_msg}')
         self._publish(actuation_msg)
-
-    def log(self, message, log_level = LogLevel.Info):
-        # log_severity = map_log_level(log_level)
-        log = self.get_logger()
-        log.log(message, LoggingSeverity.WARN)
     
     def _publish(self, msg: Actuation):
         self._publisher.publish(msg)
         self.log(f'Published: "{msg}"')
 
-def map_log_level(log_level: LogLevel) -> LoggingSeverity:
-    match log_level:
-        case LogLevel.Trace:
-            return LoggingSeverity.UNSET
-        case LogLevel.Debug:
-            return LoggingSeverity.WARN
-        case LogLevel.Info:
-            return LoggingSeverity.INFO
-        case LogLevel.Warn:
-            return LoggingSeverity.WARN
-        case LogLevel.Error:
-            return LoggingSeverity.ERROR
-        case LogLevel.Fatal:
-            return LoggingSeverity.FATAL
-        case _:
-            return LoggingSeverity.UNSET
 
+def map_to_range(angle, leftMax, rightMax):
+    """ Maps a value from one range to another.
+    <angle> should be a value in the range [-<leftMax>, <leftMax>]
+    and it will be mapped into the range [-<rightMax>, <rightMax>].
+    The words "left" and "right" are used to indicate the direction of the conversion:
+    <angle> ∈ <Range> --> <angle> ∈ <Range>
 
-def map_steer(angle, leftMin, leftMax, rightMin, rightMax):
+    Args:
+        angle (float): the angle to be mapped.
+        leftMax (float): the maximum value of the left range.
+        rightMax (float): the maximum value of the right range.
+
+    Returns:
+        float: the mapped value in the new range.
+    """
+    if leftMax is 0.0:
+        return rightMax  # Avoid division by zero
+    
     # Figure out how 'wide' each range is
-    leftSpan = leftMax - leftMin
-    rightSpan = rightMax - rightMin
+    leftMax, rightMax = abs(leftMax), abs(rightMax)
+    leftMin, rightMin = -leftMax, -rightMax
+    leftSpan, rightSpan = leftMax - leftMin, rightMax - rightMin
 
     # Convert the left range into a 0-1 range (float)
     valueScaled = float(angle - leftMin) / float(leftSpan)
 
     # Convert the 0-1 range into a value in the right range.
-    return rightMin + (valueScaled * rightSpan)
+    result = rightMin + (valueScaled * rightSpan)
+    return result
 
 	
 def main(args=None):
@@ -90,10 +86,15 @@ def main(args=None):
     mpc_manager = Manager(path_provider)
     pub = ControlNode(mpc_manager)
 
-    rclpy.spin(pub)
-
-    pub.destroy_node()
-    rclpy.shutdown()
+    try:
+        rclpy.spin(pub)
+    except KeyboardInterrupt:
+        pub.log('Keyboard interrupt, shutting down.', LogLevel.Warn)
+    except Exception as e:
+        pub.log(f'Exception occurred: {e}', LogLevel.Error)
+    finally:
+        pub.destroy_node()
+        rclpy.shutdown()
 
 if __name__ == '__main__':
     main()

@@ -11,7 +11,9 @@ import math
 import cvxpy
 from . import plotter
 from ..domain.enums import LogLevel
-from ..domain.parameters import VehicleParams as Car
+from ..domain.parameters import \
+    VehicleParams as Car,\
+    AlgorithmParams as Params
 from ..domain.status import SplinePoint, State, Pos2D
 from ..path_planning.providers import PathProvider
 
@@ -36,12 +38,6 @@ TARGET_SPEED = 10.0 / 3.6  # [m/s] target speed
 N_IND_SEARCH = 10  # Search index number
 
 DT = 0.2  # [s] time tick
-
-MAX_STEER = math.radians(45.0)  # maximum steering angle [rad]
-MAX_DSTEER = math.radians(30.0)  # maximum steering speed [rad/s]
-MAX_SPEED = 55.0 / 3.6  # maximum speed [m/s]
-MIN_SPEED = -20.0 / 3.6  # minimum speed [m/s]
-MAX_ACCEL = 1.0  # maximum accel [m/ss]
 
 DO_ANIMATION = True
 
@@ -186,7 +182,7 @@ class Manager:
         if _check_goal(new_state, self._get_goal(), target_ind, len(self._soft_route)):
             return None
         
-        return (ai, new_state.yaw)
+        return (ai, di)
     
     def _get_goal(self):
         if self._soft_route is None or len(self._soft_route) == 0:
@@ -269,20 +265,20 @@ def _get_linear_model_matrix(v, phi, delta):
 def _update_state(state: State, a: float, delta: float):
 
     # input check
-    if delta >= MAX_STEER:
-        delta = MAX_STEER
-    elif delta <= -MAX_STEER:
-        delta = -MAX_STEER
+    if delta >= Params.MAX_STEER:
+        delta = Params.MAX_STEER
+    elif delta <= -Params.MAX_STEER:
+        delta = -Params.MAX_STEER
 
     new_x = state.x + state.v * math.cos(state.yaw) * DT
     new_y = state.y + state.v * math.sin(state.yaw) * DT
     new_yaw = state.yaw + state.v / Car.WB * math.tan(delta) * DT
     new_v = state.v + a * DT
 
-    if new_v > MAX_SPEED:
-        new_v = MAX_SPEED
-    elif new_v < MIN_SPEED:
-        new_v = MIN_SPEED
+    if new_v > Params.MAX_SPEED:
+        new_v = Params.MAX_SPEED
+    elif new_v < Params.MIN_SPEED:
+        new_v = Params.MIN_SPEED
 
     new_state = State(new_x, new_y, new_yaw, new_v)
     return new_state
@@ -382,15 +378,15 @@ def _linear_mpc_control(xref, xbar, x0, dref):
         if t < (T - 1):
             cost += cvxpy.quad_form(u[:, t + 1] - u[:, t], Rd)
             constraints += [cvxpy.abs(u[1, t + 1] - u[1, t])
-                            <= MAX_DSTEER * DT]
+                            <= Params.MAX_DSTEER * DT]
 
     cost += cvxpy.quad_form(xref[:, T] - x[:, T], Qf)
 
     constraints += [x[:, 0] == x0]
-    constraints += [x[2, :] <= MAX_SPEED]
-    constraints += [x[2, :] >= MIN_SPEED]
-    constraints += [cvxpy.abs(u[0, :]) <= MAX_ACCEL]
-    constraints += [cvxpy.abs(u[1, :]) <= MAX_STEER]
+    constraints += [x[2, :] <= Params.MAX_SPEED]
+    constraints += [x[2, :] >= Params.MIN_SPEED]
+    constraints += [cvxpy.abs(u[0, :]) <= Params.MAX_ACCEL]
+    constraints += [cvxpy.abs(u[1, :]) <= Params.MAX_STEER]
 
     prob = cvxpy.Problem(cvxpy.Minimize(cost), constraints)
     prob.solve(solver=cvxpy.CLARABEL, verbose=False)

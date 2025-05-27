@@ -1,4 +1,9 @@
 from setuptools import find_packages, setup
+from pathlib import Path
+
+# Leer los requisitos de runtime
+req_file = Path(__file__).parent / ".." / "python_robotics" / "PythonRobotics" / "requirements" / "runtime.txt"
+requirements = req_file.read_text().splitlines()
 
 package_name = 'driverless'
 
@@ -11,7 +16,7 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
     ],
-    install_requires=['setuptools'],
+    install_requires=['setuptools'] + requirements,
     zip_safe=True,
     maintainer='Iago Muñoz Varela',
     maintainer_email='imvarela17@esei.uvigo.es',
@@ -29,4 +34,5 @@ setup(
             'control_node = control.control_node:main'
         ],
     },
+    
 )

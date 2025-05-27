@@ -1,0 +1,3 @@
+[submodule "src/python_robotics/PythonRobotics"]
+	path = src/python_robotics/PythonRobotics
+	url = git@github.com:TheMaakarov/PythonRobotics.git
