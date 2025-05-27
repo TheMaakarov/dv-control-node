@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="2">
+  <name>driverless</name>
+  <version>0.1.0</version>
+  <description>
+    The Driverless package.
+    It contains only the Control Node,
+    which determines the actions to be performed
+    over a provided Spline and publishes these actions
+    so that the Action Node can consume them.
+  </description>
+  <maintainer email="imvarela17@esei.uvigo.es">Iago Muñoz Varela</maintainer>
+  <license>BSD-2.0</license>
+  
+  <depend>rclcpp</depend>
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>driverless_msgs</depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
