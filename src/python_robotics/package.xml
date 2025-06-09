@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>python_robotics</name>
+  <version>1.0.0</version>
+  <description>
+    The Python Robotics package.
+    It exposes several functionalities through a submodule.
+  </description>
+  <maintainer email="imvarela17@esei.uvigo.es">Iago Muñoz Varela</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>setuptools</exec_depend>
+  
+  <!-- Ideally, should document Python dependencies here as well, although they might be a lot -->
+  <!-- <exec_depend>numpy</exec_depend> -->
+  
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
